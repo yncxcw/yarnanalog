@@ -93,7 +93,14 @@ class Job:
 	def get_finishTime(self):
 		time = Time(self.job["finishTime"]) 
 		return time
-
+	def get_runTime(self):
+		if self.get_finishTime().__strtoint__() <=0:
+			return 0
+		elif self.get_launchTime().__strtoint__() <=0:
+			return 0
+		else:
+			return self.get_finishTime()-self.get_launchTime()
+		
 	def get_maps(self):
 		return self.maps
 

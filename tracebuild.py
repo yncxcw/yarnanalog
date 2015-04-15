@@ -3,6 +3,7 @@ from job import Job
 from event import Event
 import draw as draw
 import matplotlib.pyplot as pl
+from operator import itemgetter
 
 class TraceBuild:
 	json_path = ""
@@ -98,6 +99,9 @@ class TraceBuild:
 			times.append(reducetask.get_spendTime())
 		return times
 
+	def job_runTinme(self):
+		return self.job.get_runTime()
+
 	def get_mapAttemptLocality(self):
 		locality = []
 		maps = self.job.get_maps()
@@ -134,7 +138,7 @@ class TraceBuild:
 			normalSet.append(normal)
 		return normalSet
 
-def draw_bar(plt,job_starttime,start_times,finish_times,shuffle_times):
+def draw_bar(plt,job_starttime,start_times,finish_times,shuffle_times,host):
 
 	for i in range(0,len(start_times)):
 		start_times[i]=start_times[i] - job_starttime
@@ -148,14 +152,24 @@ def draw_bar(plt,job_starttime,start_times,finish_times,shuffle_times):
 	H = []
 	for i in range(0,len(start_times)):
 		H.append(finish_times[i]-start_times[i])
+	tuple_list = []
+	for i in range(0,len(host)):
+		tuple_list.append((start_times[i],H[i],host[i]))
+	tuple_list = sorted(tuple_list,key=itemgetter(2))
+	
 	W = 0.8
 	B = start_times
+        X = []
+        Z = []
 	shuffle_start=len(start_times)-len(shuffle_times)
 	for i in range(0,len(start_times)):
-		plt.bar(2*L[i]-1,H[i],W,bottom=B[i])
+		X.append(2*L[i]-1)
+		Z.append(tuple_list[i][2])
+		plt.bar(2*L[i]-1,tuple_list[i][1],W,bottom=tuple_list[i][0])
 
-	for i in range(shuffle_start,len(start_times)):
-		plt.bar(2*L[i]-1,shuffle_times[i-shuffle_start]-B[i],W,bottom=B[i],color='r')
+	##for i in range(shuffle_start,len(start_times)):
+	##	plt.bar(2*L[i]-1,shuffle_times[i-shuffle_start]-B[i],W,bottom=B[i],color='r')
+	plt.xticks(X,Z)
 	plt.show() 
 
 if __name__ == "__main__":
@@ -167,6 +181,9 @@ if __name__ == "__main__":
 	if traceBuilder.initial_jobs() == 0:
 		print "initial job error"
 #		return
+
+	print "job run time"
+	print traceBuilder.job_runTinme()
 
 	reducetimes = traceBuilder.reduce_time()
 	print "reduce times"
@@ -255,7 +272,10 @@ if __name__ == "__main__":
 	finish_times = []
 	finish_times.extend(traceBuilder.map_finishTime())
 	finish_times.extend(traceBuilder.reduce_finishTime())
-  
+
+	hosts = []
+	hosts.extend(traceBuilder.get_mapAttemptHost())
+	hosts.extend(traceBuilder.get_reduceAttemptHost())  
 
 	locality_data = []
 	for lo in locality:
@@ -264,15 +284,15 @@ if __name__ == "__main__":
 		else:
 			locality_data.append(50)
 
-	pl.figure(1)
-	draw.draw_tasktime_host(locality_data,mapAttempHosts)
+	#pl.figure(1)
+	#draw.draw_tasktime_host(locality_data,mapAttempHosts)
 
-	pl.figure(2)
-	draw.draw_tasktime_host(maptimes,mapAttempHosts) 
+	#pl.figure(2)
+	#draw.draw_tasktime_host(maptimes,mapAttempHosts) 
 	#pl.figure(2)
 	#draw.draw_tasktime_host(reducetimes,reduceAttemptHosts) 
-	#pl.figure(1)
-	#draw_bar(pl,job_starttime,start_times,finish_times,traceBuilder.reduce_shufflefinishTime())
+	pl.figure(1)
+	draw_bar(pl,job_starttime,start_times,finish_times,traceBuilder.reduce_shufflefinishTime(),hosts)
 	#draw.draw_tasktime(maptimes)
 	#print fileBytesWritten
 	#print combineInputRecords
