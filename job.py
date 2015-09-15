@@ -102,9 +102,16 @@ class Job:
 			return self.get_finishTime()-self.get_launchTime()
 		
 	def get_maps(self):
-		return self.maps
+	    tasks = []
+            for task in self.maps:
+		if task.state == "SUCCEED":
+ 		    tasks.append(task)            
+	    return tasks
 
 	def get_reduces(self):
-		return self.reduces
-         
+	    tasks = []
+            for task in self.reduces:
+		if task.state == "SUCCEED":
+ 		    tasks.append(task)            
+	    return tasks
 

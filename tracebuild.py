@@ -58,7 +58,8 @@ class TraceBuild:
 		times = []
 		maps = self.job.get_maps()
 		for maptask in maps:
-			times.append(maptask.mapattempts[0].get_startTime().__strtoint__())
+			#times.append(maptask.mapattempts[0].get_startTime().__strtoint__())
+			times.append(maptask.get_startTime().__strtoint__())
 		return times
 
 	def map_finishTime(self):
@@ -92,7 +93,6 @@ class TraceBuild:
 		return times
 
 	def reduce_time(self):
-
 		times=[]
 		reduces = self.job.get_reduces()
 		for reducetask in reduces:
@@ -148,6 +148,8 @@ def draw_bar(plt,job_starttime,start_times,finish_times,shuffle_times,host):
 	for i in range(0,len(shuffle_times)):
 		shuffle_times[i]=shuffle_times[i] - job_starttime
 
+	print "size jobs",len(start_times)
+
 	L = range(1,len(start_times)+1)
 	H = []
 	for i in range(0,len(start_times)):
@@ -169,6 +171,7 @@ def draw_bar(plt,job_starttime,start_times,finish_times,shuffle_times,host):
 
 	##for i in range(shuffle_start,len(start_times)):
 	##	plt.bar(2*L[i]-1,shuffle_times[i-shuffle_start]-B[i],W,bottom=B[i],color='r')
+	print Z
 	plt.xticks(X,Z)
 	plt.show() 
 
@@ -186,16 +189,59 @@ if __name__ == "__main__":
 	print traceBuilder.job_runTinme()
 
 	reducetimes = traceBuilder.reduce_time()
+	print "size reduce",len(reducetimes)
 	print "reduce times"
 	print reducetimes   
  
 	maptimes = traceBuilder.map_time()
+	print "size maps",len(maptimes)
 	print "map times"
 	print maptimes
 
+   
+        mapToHDFS={}
+	mapToGCRatio=[]
+	mapToUnitTime={}
+	mapToTime={}
+	maps = traceBuilder.get_maps()
+        for mapTask in maps:
+            host = mapTask.get_successAttempt().get_hostname()
+            time = mapTask.get_spendTime()
+	    gcTime =mapTask.get_counterValue("GC_TIME_MILLIS")
+	    cpuTime=mapTask.get_counterValue("CPU_MILLISECONDS")	
+            read = mapTask.get_counterValue("HDFS_BYTES_READ")
+            ratio = 1.0*read/time*1.0
+	    gcratio = 1.0*gcTime/time*1.0
+	    mapToGCRatio.append(gcratio)
+            if mapToUnitTime.get(host):
+                mapToUnitTime[host].append(ratio)
+	    else:
+		mapToUnitTime[host]=[]
+                mapToUnitTime[host].append(ratio)		
+            if mapToHDFS.get(host):
+	        mapToHDFS[host]= mapToHDFS[host]+read
+	    else:
+		mapToHDFS[host]=read
+	    if mapToTime.get(host):
+		mapToTime[host].append(time)
+	    else:
+		mapToTime[host]=[]
+		mapToTime[host].append(time)
 
 
-
+        sortedKeys = mapToHDFS.keys()
+        sortedKeys.sort()
+	print sortedKeys	
+	for key in sortedKeys: 
+	    print "hdfs read ",key,":  ",mapToHDFS[key]/(1000*1000)
+	sortedKeys = mapToUnitTime.keys()
+        sortedKeys.sort()
+	for key in sortedKeys:
+	    pl.plot(mapToUnitTime[key])
+	    print "average time",key,":  ",sum(mapToUnitTime[key],0.0)/len(mapToUnitTime[key])
+	pl.figure(1)
+	pl.show()
+        
 	locality = traceBuilder.get_mapAttemptLocality();
 	#print "locallity"
 	#print locality
@@ -213,9 +259,17 @@ if __name__ == "__main__":
 	#physicalMemoryBytes = traceBuilder.map_countByKey("PHYSICAL_MEMORY_BYTES")
 	#print "physical memory"
 	#print physicalMemoryBytes
-	#cpuMilliSeconds=traceBuilder.map_countByKey("CPU_MILLISECONDS")
-	#print "cpu secdons"
-	#print cpuMilliSeconds
+	cpuMilliSeconds=traceBuilder.map_countByKey("CPU_MILLISECONDS")
+	cpuGCTime=traceBuilder.map_countByKey("GC_TIME_MILLIS")
+	print "gcratio average:   ",sum(mapToGCRatio)/len(mapToGCRatio)
+        #pl.plot(maptimes)
+        #pl.plot(cpuMilliSeconds)
+        #pl.plot(cpuGCTime)
+	#pl.plot(mapToGCRatio) 
+        #pl.figure(2)
+	#pl.show()
+		
+        #print cpuMilliSeconds
 	#spilledRecords = traceBuilder.map_countByKey("SPILLED_RECORDS")
 	#print "spilled Records"
 	#print spilledRecords
@@ -226,13 +280,13 @@ if __name__ == "__main__":
 	#splitRaw = traceBuilder.map_countByKey("SPLIT_RAW_BYTES")
 	#print "split Rwa"
 	#print splitRaw
-	mapInRecords = traceBuilder.map_countByKey("MAP_INPUT_RECORDS")
-	print "map input records"
-	print mapInRecords
+	#mapInRecords = traceBuilder.map_countByKey("MAP_INPUT_RECORDS")
+	#print "map input records"
+	#print mapInRecords
 	hdfsBytesRead = traceBuilder.map_countByKey("HDFS_BYTES_READ")
 	print "hdfs bytes read"
-	print hdfsBytesRead
-	print "total"
+	#print hdfsBytesRead
+	#print "total"
 	#print sum(hdfsBytesRead)/(1024*1024)
 	#hdfsBytesWrite= traceBuilder.map_countByKey("HDFS_BYTES_WRITTEN")
 	#print "hdfs bytes write"
@@ -253,7 +307,28 @@ if __name__ == "__main__":
 
 	mapAttempHosts = traceBuilder.get_mapAttemptHost()
 	print "map attempt hosts"
-	print mapAttempHosts
+	
+	mapDict = {}
+	
+	for item in mapAttempHosts:
+		if mapDict.get(item):
+			mapDict[item]=mapDict[item]+1
+		else:   
+			mapDict[item]=1
+	print mapDict
+
+	reduceAttempHosts = traceBuilder.get_reduceAttemptHost()
+	print "reduce attempt hosts"
+
+	reduceDict = {}
+	
+	for item in reduceAttempHosts:
+		if reduceDict.get(item):
+			reduceDict[item]=reduceDict[item]+1
+		else:   
+			reduceDict[item]=1
+	print reduceDict
+		
 
 	X =[6*x for x in  range(1,41)]
 
@@ -284,15 +359,15 @@ if __name__ == "__main__":
 		else:
 			locality_data.append(50)
 
-	#pl.figure(1)
+	#pl.figure(2)
 	#draw.draw_tasktime_host(locality_data,mapAttempHosts)
 
 	#pl.figure(2)
 	#draw.draw_tasktime_host(maptimes,mapAttempHosts) 
 	#pl.figure(2)
 	#draw.draw_tasktime_host(reducetimes,reduceAttemptHosts) 
-	pl.figure(1)
-	draw_bar(pl,job_starttime,start_times,finish_times,traceBuilder.reduce_shufflefinishTime(),hosts)
+	#pl.figure(3)
+	#draw_bar(pl,job_starttime,start_times,finish_times,traceBuilder.reduce_shufflefinishTime(),hosts)
 	#draw.draw_tasktime(maptimes)
 	#print fileBytesWritten
 	#print combineInputRecords

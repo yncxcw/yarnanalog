@@ -1,6 +1,7 @@
 from times import Time
 
 class ReduceAttempt:
+	state=""
 	reduceattempt = {}
 
 	def __init__(self):
@@ -14,12 +15,13 @@ class ReduceAttempt:
 			self.reduceattempt["containerId"] = eventValue["containerId"]
 			self.reduceattempt["locality"] = eventValue["locality"]
 		elif eventType == "REDUCE_ATTEMPT_FINISHED":
+                        self.state = "SUCCEED"
 			self.reduceattempt["hostname"]         = eventValue["hostname"][1:]	
 			self.reduceattempt["finishTime"]       = eventValue["finishTime"]
 			self.reduceattempt["taskStatus"]       = eventValue["taskStatus"]
 			self.reduceattempt["shuffleFinishTime"]= eventValue["shuffleFinishTime"]
 		else:
-			self.reduceattempt["taskStatus"] = eventValue["status"]
+			self.state = "FAILED"
 
 	def get_finishTime(self):
 		return Time(self.reduceattempt["finishTime"])
@@ -43,6 +45,7 @@ class ReduceAttempt:
 class Reduce:
 	reducetask = {}
 	reduceattempts = []
+	state=""
 
 	def __init__(self):
 		self.reducetask = {}
@@ -53,7 +56,11 @@ class Reduce:
 			self.reducetask["taskid"] = eventValue["taskid"]
 			self.reducetask["startTime"] = eventValue["startTime"]
 		elif eventType == "TASK_FINISHED":
-			self.reducetask["finishTime"]=eventValue["finishTime"] 
+                        self.state = "SUCCEED"
+			self.reducetask["finishTime"]=eventValue["finishTime"]
+		elif eventType == "TASK_FAILED" or eventType == "TASK_KILLED":
+			self.maptask["finishTime"] = eventValue["finishTime"] 
+                        self.state = "FAILED" 
 		elif eventType.startswith("REDUCE_ATTEMPT"):
 			if eventType == "REDUCE_ATTEMPT_STARTED":
 				nreduceattempt = ReduceAttempt()

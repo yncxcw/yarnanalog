@@ -1,6 +1,7 @@
 from times import Time
 from counter import Counter
 class MapAttempt:
+        state=""
 	mapattempt = {}
 
 	def __init__(self):
@@ -13,16 +14,16 @@ class MapAttempt:
 			self.mapattempt["startTime"]=eventValue["startTime"]
 			self.mapattempt["containerId"] = eventValue["containerId"]
 			self.mapattempt["locality"] = eventValue["locality"]["string"][0]
-		else:
+		elif eventType == "MAP_ATTEMPT_FINISHED":
+                        self.state = "SUCCEED" 
 			self.mapattempt["finishTime"] = eventValue["finishTime"]
 			self.mapattempt["hostname"]   = eventValue["hostname"][1:]
-			if eventType.endswith("FINISHED"):
-				self.mapattempt["taskStatus"] = eventValue["taskStatus"]
-			else:
-				self.mapattempt["taskStatus"] = eventValue["status"]
+			self.mapattempt["taskStatus"] = eventValue["taskStatus"]
+		else:
+			self.state = "FAILED"
 	 	
 	def get_taskStatus(self):
-		return self.mapattempt["taskStatus"]
+		return self.state
 
 	def get_hostname(self):
 		return self.mapattempt["hostname"]
@@ -55,6 +56,7 @@ class MapAttempt:
 
 		
 class Map:
+        state   = ""
 	maptask = {}
 	mapattempts = [] 
 
@@ -80,12 +82,13 @@ class Map:
 		self.counter.register_property("PHYSICAL_MEMORY_BYTES")
 		self.counter.register_property("VIRTUAL_MEMORY_BYTES")
 		self.counter.register_property("COMMITTED_HEAP_BYTES")
+		self.counter.register_property("GC_TIME_MILLIS")
 		
 
 
 	def get_successAttempt(self):
 		for attempt in self.mapattempts:
-			if attempt.get_taskStatus() == "SUCCEEDED":
+			if attempt.get_taskStatus() == "SUCCEED":
 				return attempt
 	
 	def get_counterValue(self,key):
@@ -104,9 +107,12 @@ class Map:
 			self.maptask["splitLocations"] = eventValue["splitLocations"]
 		elif eventType == "TASK_FINISHED":
 			self.maptask["finishTime"] = eventValue["finishTime"]
+                        self.state = "SUCCEED"
 			for groupList in eventValue["counters"]["groups"]:
 				self.process_counterValue(groupList["counts"])
-
+                elif eventType == "TASK_FAILED" or eventType == "TASK_KILLED":
+			self.maptask["finishTime"] = eventValue["finishTime"] 
+                        self.state = "FAILED"
 		elif eventType.startswith("MAP_ATTEMPT"):
 			if eventType == "MAP_ATTEMPT_STARTED":
 				nmapattempt = MapAttempt()
@@ -120,12 +126,7 @@ class Map:
 			if attempt.get_attempid() == attemptid:
 				return attempt
 		return
-
-	def get_successAttempt(self):
-		for attempt in self.mapattempts:
-			if attempt.get_taskStatus() == "SUCCEEDED":
-				return attempt
-
+	
 	def get_splitLocations(self):
 		return self.maptask["splitLocations"]
 
