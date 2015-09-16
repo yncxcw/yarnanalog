@@ -1,4 +1,5 @@
 import json
+import numpy as np
 from job import Job
 from event import Event
 import draw as draw
@@ -241,7 +242,18 @@ if __name__ == "__main__":
 	    print "average time",key,":  ",sum(mapToUnitTime[key],0.0)/len(mapToUnitTime[key])
 	pl.figure(1)
 	pl.show()
-        
+
+        sortedKeys = mapToTime.keys()
+	sortedKeys.sort()
+        colors = ['b','g','r','c','y','k'] 
+	j=0
+	for key in sortedKeys:
+	    X = range(1,len(mapToTime[key])+1)
+	    Y = mapToTime[key]		
+	    pl.scatter(X,Y,c=colors[j])
+	    j = j + 1	
+	pl.figure(2)
+	pl.show()        
 	locality = traceBuilder.get_mapAttemptLocality();
 	#print "locallity"
 	#print locality
