@@ -201,7 +201,8 @@ if __name__ == "__main__":
 
    
         mapToHDFS={}
-	mapToGCRatio=[]
+	mapToHDFSList={}
+	mapToGCRatio={}
 	mapToUnitTime={}
 	mapToTime={}
 	maps = traceBuilder.get_maps()
@@ -212,35 +213,57 @@ if __name__ == "__main__":
 	    cpuTime=mapTask.get_counterValue("CPU_MILLISECONDS")	
             read = mapTask.get_counterValue("HDFS_BYTES_READ")
             ratio = 1.0*read/time*1.0
-	    gcratio = 1.0*gcTime/time*1.0
-	    mapToGCRatio.append(gcratio)
+	    gcratio = 1.0*gcTime/time
+	    if mapToGCRatio.get(host):
+		mapToGCRatio[host].append(gcratio)
+	    else:
+		mapToGCRatio[host]=[]
+		mapToGCRatio[host].append(gcratio)
+
+	    if mapToHDFSList.get(host):
+		mapToHDFSList[host].append(read/1000000)
+	    else:
+		mapToHDFSList[host]=[]
+		mapToHDFSList[host].append(read/1000000)
+	
             if mapToUnitTime.get(host):
                 mapToUnitTime[host].append(ratio)
 	    else:
 		mapToUnitTime[host]=[]
-                mapToUnitTime[host].append(ratio)		
+                mapToUnitTime[host].append(ratio)	
+	
             if mapToHDFS.get(host):
 	        mapToHDFS[host]= mapToHDFS[host]+read
 	    else:
 		mapToHDFS[host]=read
+
 	    if mapToTime.get(host):
 		mapToTime[host].append(time)
-	    else:
+	    else:			
 		mapToTime[host]=[]
 		mapToTime[host].append(time)
 
 
+
         sortedKeys = mapToHDFS.keys()
         sortedKeys.sort()
-	print sortedKeys	
+	print sortedKeys
+
+	print mapToGCRatio
+	pl.figure(1)	
+	for key in sortedKeys:
+	    pl.plot(mapToGCRatio[key])
+	pl.show()		
 	for key in sortedKeys: 
 	    print "hdfs read ",key,":  ",mapToHDFS[key]/(1000*1000)
 	sortedKeys = mapToUnitTime.keys()
         sortedKeys.sort()
+	
+	
+	pl.figure(2)
 	for key in sortedKeys:
 	    pl.plot(mapToUnitTime[key])
 	    print "average time",key,":  ",sum(mapToUnitTime[key],0.0)/len(mapToUnitTime[key])
-	pl.figure(1)
 	pl.show()
 
         sortedKeys = mapToTime.keys()
@@ -250,9 +273,9 @@ if __name__ == "__main__":
 	for key in sortedKeys:
 	    X = range(1,len(mapToTime[key])+1)
 	    Y = mapToTime[key]		
-	    pl.scatter(X,Y,c=colors[j])
+	    pl.scatter(X,Y,c=colors[j%6])
 	    j = j + 1	
-	pl.figure(2)
+	pl.figure(3)
 	pl.show()        
 	locality = traceBuilder.get_mapAttemptLocality();
 	#print "locallity"
@@ -271,9 +294,9 @@ if __name__ == "__main__":
 	#physicalMemoryBytes = traceBuilder.map_countByKey("PHYSICAL_MEMORY_BYTES")
 	#print "physical memory"
 	#print physicalMemoryBytes
-	cpuMilliSeconds=traceBuilder.map_countByKey("CPU_MILLISECONDS")
-	cpuGCTime=traceBuilder.map_countByKey("GC_TIME_MILLIS")
-	print "gcratio average:   ",sum(mapToGCRatio)/len(mapToGCRatio)
+	#cpuMilliSeconds=traceBuilder.map_countByKey("CPU_MILLISECONDS")
+	#cpuGCTime=traceBuilder.map_countByKey("GC_TIME_MILLIS")
+	#print "gcratio average:   ",sum(mapToGCRatio)/len(mapToGCRatio)
         #pl.plot(maptimes)
         #pl.plot(cpuMilliSeconds)
         #pl.plot(cpuGCTime)
@@ -294,6 +317,9 @@ if __name__ == "__main__":
 	#print splitRaw
 	#mapInRecords = traceBuilder.map_countByKey("MAP_INPUT_RECORDS")
 	#print "map input records"
+	#pl.plot(mapInRecords)
+	#pl.figure(3)
+	#pl.show() 
 	#print mapInRecords
 	hdfsBytesRead = traceBuilder.map_countByKey("HDFS_BYTES_READ")
 	print "hdfs bytes read"
@@ -371,15 +397,15 @@ if __name__ == "__main__":
 		else:
 			locality_data.append(50)
 
-	#pl.figure(2)
-	#draw.draw_tasktime_host(locality_data,mapAttempHosts)
+	pl.figure(4)
+	draw.draw_tasktime_host(locality_data,mapAttempHosts)
 
 	#pl.figure(2)
 	#draw.draw_tasktime_host(maptimes,mapAttempHosts) 
 	#pl.figure(2)
 	#draw.draw_tasktime_host(reducetimes,reduceAttemptHosts) 
-	#pl.figure(3)
-	#draw_bar(pl,job_starttime,start_times,finish_times,traceBuilder.reduce_shufflefinishTime(),hosts)
+	pl.figure(5)
+	draw_bar(pl,job_starttime,start_times,finish_times,traceBuilder.reduce_shufflefinishTime(),hosts)
 	#draw.draw_tasktime(maptimes)
 	#print fileBytesWritten
 	#print combineInputRecords
