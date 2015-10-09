@@ -199,6 +199,8 @@ if __name__ == "__main__":
 	print "map times"
 	print maptimes
 
+	maptimes.sort()
+
    
         mapToHDFS={}
 	mapToHDFSList={}
@@ -249,13 +251,6 @@ if __name__ == "__main__":
         sortedKeys.sort()
 	print sortedKeys
 
-	print mapToGCRatio
-	pl.figure(1)	
-	for key in sortedKeys:
-	    pl.plot(mapToGCRatio[key])
-	pl.show()		
-	for key in sortedKeys: 
-	    print "hdfs read ",key,":  ",mapToHDFS[key]/(1000*1000)
 	sortedKeys = mapToUnitTime.keys()
         sortedKeys.sort()
 	
