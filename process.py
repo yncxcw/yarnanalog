@@ -9,6 +9,7 @@ hostToUnit = {}
 hostToSpeed = {}
 hostToRatio = {}
 hostToBlock={}
+blockToRatio={}
 excutionTime = 0.1
 excutionRatio = 0.1
 block = 0
@@ -34,6 +35,7 @@ for line in f.readlines():
 	    block = float(line.strip().split()[-1].split(":")[-1])
 	if "node" in line:	    
 	    host2  = line.strip().split()[-1].split(":")[-1]
+	    blockToRatio[block] = ratio	
 	    if hostToBlock.get(host2):
 		hostToBlock[host2].append(block)
 	    else:
@@ -67,8 +69,7 @@ for line in f.readlines():
 sortedKeys = hostToSpeed.keys()
 sortedKeys.sort()
 
-
-print hostToBlock
+#print hostToBlock
 #pl.figure(1)
 #pl.plot(hostToBlock["s2"])
 #pl.figure(2)
@@ -91,4 +92,7 @@ pl.figure(4)
 for key in hostToUnit.keys():
    pl.plot(hostToUnit[key])
 
+print hostToUnit["s2"]
+print hostToBlock["s2"]
+print hostToRatio["s2"]
 pl.show()	

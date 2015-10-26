@@ -15,7 +15,7 @@ class ReduceAttempt:
 			self.reduceattempt["containerId"] = eventValue["containerId"]
 			self.reduceattempt["locality"] = eventValue["locality"]
 		elif eventType == "REDUCE_ATTEMPT_FINISHED":
-                        self.state = "SUCCEED"
+                        self.state = "SUCCEEDED"
 			self.reduceattempt["hostname"]         = eventValue["hostname"][1:]	
 			self.reduceattempt["finishTime"]       = eventValue["finishTime"]
 			self.reduceattempt["taskStatus"]       = eventValue["taskStatus"]
@@ -39,7 +39,7 @@ class ReduceAttempt:
 		return self.reduceattempt["locality"]
 	
 	def get_taskStatus(self):
-		return self.reduceattempt["taskStatus"]
+		return self.state
 
 
 class Reduce:

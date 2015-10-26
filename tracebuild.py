@@ -197,7 +197,7 @@ if __name__ == "__main__":
 	maptimes = traceBuilder.map_time()
 	print "size maps",len(maptimes)
 	print "map times"
-	print maptimes
+	print "min map time:",max(maptimes)
 
 	maptimes.sort()
 
@@ -223,10 +223,10 @@ if __name__ == "__main__":
 		mapToGCRatio[host].append(gcratio)
 
 	    if mapToHDFSList.get(host):
-		mapToHDFSList[host].append(read/1000000)
+		mapToHDFSList[host].append(read)
 	    else:
 		mapToHDFSList[host]=[]
-		mapToHDFSList[host].append(read/1000000)
+		mapToHDFSList[host].append(read)
 	
             if mapToUnitTime.get(host):
                 mapToUnitTime[host].append(ratio)
@@ -253,7 +253,11 @@ if __name__ == "__main__":
 
 	sortedKeys = mapToUnitTime.keys()
         sortedKeys.sort()
-	
+
+	print "total bytes"
+        print sum(mapToHDFS.values())
+
+        print mapToHDFSList	
 	
 	pl.figure(2)
 	for key in sortedKeys:
@@ -316,8 +320,8 @@ if __name__ == "__main__":
 	#pl.figure(3)
 	#pl.show() 
 	#print mapInRecords
-	hdfsBytesRead = traceBuilder.map_countByKey("HDFS_BYTES_READ")
-	print "hdfs bytes read"
+	#hdfsBytesRead = traceBuilder.map_countByKey("HDFS_BYTES_READ")
+	#print "hdfs bytes read"
 	#print hdfsBytesRead
 	#print "total"
 	#print sum(hdfsBytesRead)/(1024*1024)
@@ -350,17 +354,17 @@ if __name__ == "__main__":
 			mapDict[item]=1
 	print mapDict
 
-	reduceAttempHosts = traceBuilder.get_reduceAttemptHost()
-	print "reduce attempt hosts"
+	#reduceAttempHosts = traceBuilder.get_reduceAttemptHost()
+	#print "reduce attempt hosts"
 
-	reduceDict = {}
+	#reduceDict = {}
 	
-	for item in reduceAttempHosts:
-		if reduceDict.get(item):
-			reduceDict[item]=reduceDict[item]+1
-		else:   
-			reduceDict[item]=1
-	print reduceDict
+	#for item in reduceAttempHosts:
+	#	if reduceDict.get(item):
+	#		reduceDict[item]=reduceDict[item]+1
+	#	else:   
+        #		reduceDict[item]=1
+	#print reduceDict
 		
 
 	X =[6*x for x in  range(1,41)]
